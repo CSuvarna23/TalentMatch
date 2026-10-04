@@ -30,9 +30,18 @@ from app.services.skill_extractor import (
 # can have a high semantic similarity even when
 # the exact words are different.
 
-semantic_model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+semantic_model = None
+
+
+def get_semantic_model():
+    global semantic_model
+
+    if semantic_model is None:
+        semantic_model = SentenceTransformer(
+            "all-MiniLM-L6-v2"
+        )
+
+    return semantic_model
 
 
 # =========================================
@@ -71,7 +80,7 @@ def calculate_semantic_similarity(
         return 0.0
 
     # Convert text into embeddings
-    embeddings = semantic_model.encode(
+    embeddings = get_semantic_model().encode(
         [
             resume_text,
             job_text

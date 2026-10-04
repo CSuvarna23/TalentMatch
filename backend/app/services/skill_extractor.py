@@ -5,13 +5,6 @@ from spacy.matcher import PhraseMatcher
 
 
 # =========================================
-# Load spaCy NLP model
-# =========================================
-
-nlp = spacy.load("en_core_web_sm")
-
-
-# =========================================
 # Skills that our system can recognize
 # =========================================
 
@@ -52,24 +45,26 @@ SKILL_LIST = [
 ]
 
 
-# =========================================
-# Create PhraseMatcher
-# =========================================
-
-matcher = PhraseMatcher(
-    nlp.vocab,
-    attr="LOWER"
-)
+nlp = None
+matcher = None
 
 
-# Convert skills into NLP patterns
-patterns = [
-    nlp.make_doc(skill)
-    for skill in SKILL_LIST
-]
+def get_skill_matcher():
+    global nlp, matcher
 
+    if nlp is None or matcher is None:
+        nlp = spacy.load("en_core_web_sm")
+        matcher = PhraseMatcher(
+            nlp.vocab,
+            attr="LOWER"
+        )
+        patterns = [
+            nlp.make_doc(skill)
+            for skill in SKILL_LIST
+        ]
+        matcher.add("SKILLS", patterns)
 
-matcher.add("SKILLS", patterns)
+    return nlp, matcher
 
 
 # =========================================
@@ -113,10 +108,11 @@ def extract_skills(text: str) -> list[str]:
         return []
 
     text = preprocess_text(text)
+    nlp_model, skill_matcher = get_skill_matcher()
 
-    doc = nlp(text)
+    doc = nlp_model(text)
 
-    matches = matcher(doc)
+    matches = skill_matcher(doc)
 
     found_skills = []
 
