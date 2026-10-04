@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+
 from app.routers.auth import router as auth_router
 from app.routers.resume import router as resume_router
 from app.routers.jobs import router as jobs_router
@@ -22,6 +24,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://talent-match-three.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
