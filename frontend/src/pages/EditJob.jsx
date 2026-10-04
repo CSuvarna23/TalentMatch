@@ -16,6 +16,7 @@ function EditJob() {
 
   const [formData, setFormData] = useState({
     job_title: "",
+    category: "",
     description: "",
     required_skills: "",
     experience: "",
@@ -38,6 +39,9 @@ function EditJob() {
         setFormData({
           job_title:
             job.job_title || "",
+
+          category:
+            job.category || "",
 
           description:
             job.description || "",
@@ -132,6 +136,18 @@ function EditJob() {
             required
           />
 
+
+          <label>
+            Job Category
+          </label>
+
+          <input
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            placeholder="HR, Software Development, Finance"
+            required
+          />
 
           <label>
             Job Description

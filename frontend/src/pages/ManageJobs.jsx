@@ -47,7 +47,7 @@ function ManageJobs() {
     try {
 
       const jobsData =
-        await getJobs();
+        await getJobs(true);
 
       setJobs(jobsData);
 
@@ -676,8 +676,11 @@ function ManageJobs() {
                               job.job_id
                             )
                           }
+                          disabled={job.is_active === false}
                         >
-                          Disable
+                          {job.is_active === false
+                            ? "Disabled"
+                            : "Disable"}
                         </button>
 
                       </div>

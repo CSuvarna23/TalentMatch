@@ -1,12 +1,20 @@
+import re
+
 import spacy
 from spacy.matcher import PhraseMatcher
 
 
-# Load NLP model
+# =========================================
+# Load spaCy NLP model
+# =========================================
+
 nlp = spacy.load("en_core_web_sm")
 
 
+# =========================================
 # Skills that our system can recognize
+# =========================================
+
 SKILL_LIST = [
     "Python",
     "Java",
@@ -44,7 +52,10 @@ SKILL_LIST = [
 ]
 
 
-# Create phrase matcher
+# =========================================
+# Create PhraseMatcher
+# =========================================
+
 matcher = PhraseMatcher(
     nlp.vocab,
     attr="LOWER"
@@ -61,7 +72,47 @@ patterns = [
 matcher.add("SKILLS", patterns)
 
 
+# =========================================
+# Text preprocessing
+# =========================================
+
+def preprocess_text(text: str) -> str:
+    """
+    Basic NLP preprocessing before semantic matching.
+
+    The original text is preserved as much as possible,
+    while unnecessary whitespace is removed.
+    """
+
+    if not text:
+        return ""
+
+    # Replace multiple spaces/newlines with one space
+    text = re.sub(r"\s+", " ", text)
+
+    # Remove leading/trailing whitespace
+    text = text.strip()
+
+    return text
+
+
+# =========================================
+# Skill Extraction
+# =========================================
+
 def extract_skills(text: str) -> list[str]:
+    """
+    Extract skills from resume/job text using spaCy
+    PhraseMatcher.
+
+    Returns:
+        List of detected skills.
+    """
+
+    if not text:
+        return []
+
+    text = preprocess_text(text)
 
     doc = nlp(text)
 
@@ -71,13 +122,21 @@ def extract_skills(text: str) -> list[str]:
 
     for match_id, start, end in matches:
 
-        skill = doc[start:end].text
+        skill = doc[start:end].text.strip()
 
-        if skill not in found_skills:
+        # Avoid duplicate skills
+        if skill.lower() not in {
+            existing.lower()
+            for existing in found_skills
+        }:
             found_skills.append(skill)
 
     return found_skills
 
+
+# =========================================
+# Example
+# =========================================
 
 if __name__ == "__main__":
 
@@ -88,4 +147,5 @@ if __name__ == "__main__":
 
     skills = extract_skills(text)
 
+    print("Extracted Skills:")
     print(skills)

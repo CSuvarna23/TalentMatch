@@ -1160,6 +1160,41 @@ select:focus {
   padding: 40px 20px 60px;
 }
 
+.dashboard-shell {
+  height: calc(100vh - 70px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.dashboard-top {
+  flex: 0 0 auto;
+  background: #f5f7fb;
+  z-index: 2;
+}
+
+.dashboard-scroll-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 40px;
+}
+
+.hr-dashboard .dashboard-scroll-content {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.hr-dashboard .dashboard-scroll-content > .hr-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+}
+
 
 /* Welcome */
 
@@ -1260,6 +1295,7 @@ select:focus {
 
 .hr-create-job-button {
   display: inline-block;
+  width: fit-content;
   background: #2563eb;
   color: white;
   padding: 13px 20px;
@@ -1280,6 +1316,10 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 

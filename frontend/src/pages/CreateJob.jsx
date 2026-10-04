@@ -12,6 +12,7 @@ function CreateJob() {
 
   const [formData, setFormData] = useState({
     job_title: "",
+    category: "",
     description: "",
     required_skills: "",
     experience: "",
@@ -59,6 +60,18 @@ function CreateJob() {
           <input
             name="job_title"
             value={formData.job_title}
+            onChange={handleChange}
+            required
+          />
+
+          <label>
+            Job Category
+          </label>
+
+          <input
+            name="category"
+            placeholder="HR, Software Development, Finance"
+            value={formData.category}
             onChange={handleChange}
             required
           />

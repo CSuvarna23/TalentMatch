@@ -2,8 +2,24 @@ import { apiRequest } from "./api";
 
 
 // Get active jobs
-export async function getJobs() {
-  return await apiRequest("/jobs/");
+export async function getJobs(includeDisabled = false) {
+  const query = includeDisabled
+    ? "?include_disabled=true"
+    : "";
+
+  return await apiRequest(`/jobs/${query}`);
+}
+
+
+export async function getRecommendedJobs() {
+  return await apiRequest("/jobs/recommended");
+}
+
+
+export async function getJobMatches() {
+  return await apiRequest(
+    "/jobs/recommended?include_applied=true"
+  );
 }
 
 
@@ -20,6 +36,11 @@ export async function createJob(jobData) {
   params.append(
     "job_title",
     jobData.job_title
+  );
+
+  params.append(
+    "category",
+    jobData.category
   );
 
   params.append(
@@ -65,6 +86,7 @@ export async function updateJob(
       },
       body: JSON.stringify({
         job_title: jobData.job_title,
+        category: jobData.category,
         description: jobData.description,
         required_skills:
           jobData.required_skills,

@@ -11,8 +11,13 @@ from app.schemas.job import JobUpdate
 
 from app.routers.auth import (
     require_hr,
+    require_candidate,
     get_current_user
 )
+
+from app.services.job_matcher import calculate_match
+from app.services.resume_classifier import predict_category
+from app.services.skill_extractor import extract_skills
 
 
 router = APIRouter(
@@ -32,12 +37,14 @@ def create_job(
     required_skills: str,
     experience: str,
     location: str,
+    category: str | None = None,
     current_user: User = Depends(require_hr),
     db: Session = Depends(get_db)
 ):
 
     new_job = Job(
         job_title=job_title,
+        category=category,
         description=description,
         required_skills=required_skills,
         experience=experience,
@@ -54,6 +61,7 @@ def create_job(
         "message": "Job created successfully",
         "job_id": new_job.job_id,
         "job_title": new_job.job_title,
+        "category": new_job.category,
         "required_skills": new_job.required_skills,
         "experience": new_job.experience,
         "location": new_job.location
@@ -66,16 +74,102 @@ def create_job(
 
 @router.get("/")
 def get_jobs(
+    include_disabled: bool = False,
     db: Session = Depends(get_db)
 ):
 
-    jobs = (
-        db.query(Job)
-        
-        .all()
-    )
+    query = db.query(Job)
+
+    if not include_disabled:
+        query = query.filter(Job.is_active == True)
+
+    jobs = query.all()
 
     return jobs
+
+
+@router.get("/recommended")
+def get_recommended_jobs(
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
+    include_applied: bool = False
+):
+    resume = (
+        db.query(Resume)
+        .filter(
+            Resume.user_id == current_user.id,
+            Resume.is_current == True
+        )
+        .first()
+    )
+
+    if resume is None or not resume.extracted_text:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a resume before requesting recommendations"
+        )
+
+    resume_text = resume.extracted_text
+    resume_skills = extract_skills(resume_text)
+    resume_category = predict_category(resume_text)
+    applied_job_ids = {
+        job_id
+        for (job_id,) in db.query(Application.job_id).filter(
+            Application.user_id == current_user.id
+        ).all()
+    }
+    recommendations = []
+
+    if include_applied:
+        jobs = db.query(Job).filter(Job.is_active == True).all()
+    else:
+        jobs = db.query(Job).filter(
+            Job.is_active == True,
+            ~Job.job_id.in_(applied_job_ids)
+        ).all()
+
+    for job in jobs:
+        required_skills = [
+            skill.strip()
+            for skill in (job.required_skills or "").split(",")
+            if skill.strip()
+        ]
+        job_text = " ".join(
+            part
+            for part in [
+                job.job_title or "",
+                job.description or "",
+                job.required_skills or "",
+                job.experience or "",
+                job.location or ""
+            ]
+            if part.strip()
+        )
+        match_result = calculate_match(
+            resume_skills=resume_skills,
+            required_skills=required_skills,
+            resume_text=resume_text,
+            job_text=job_text,
+            resume_category=resume_category,
+            job_category=job.category or ""
+        )
+
+        recommendations.append({
+            "job_id": job.job_id,
+            "job_title": job.job_title,
+            "category": job.category,
+            "description": job.description,
+            "required_skills": job.required_skills,
+            "experience": job.experience,
+            "location": job.location,
+            **match_result
+        })
+
+    return sorted(
+        recommendations,
+        key=lambda recommendation: recommendation["match_score"],
+        reverse=True
+    )
 
 
 # =========================================
@@ -135,6 +229,7 @@ def update_job(
         )
 
     job.job_title = job_data.job_title
+    job.category = job_data.category
     job.description = job_data.description
     job.required_skills = job_data.required_skills
     job.experience = job_data.experience
@@ -147,6 +242,7 @@ def update_job(
         "message": "Job updated successfully",
         "job_id": job.job_id,
         "job_title": job.job_title,
+        "category": job.category,
         "description": job.description,
         "required_skills": job.required_skills,
         "experience": job.experience,
@@ -181,14 +277,15 @@ def disable_job(
             detail="Job not found or already disabled"
         )
 
-    
+    job.is_active = False
 
     db.commit()
     db.refresh(job)
 
     return {
         "message": "Job disabled successfully",
-        "job_id": job.job_id
+        "job_id": job.job_id,
+        "is_active": job.is_active
     }
 
 

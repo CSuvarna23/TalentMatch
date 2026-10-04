@@ -20,6 +20,27 @@ import { getJob } from "../services/jobService";
 
 import { API_URL } from "../services/api";
 
+function ApplicantChartTooltip({ active, payload }) {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  const applicant = payload[0].payload;
+
+  return (
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #d1d5db",
+        padding: "8px 12px",
+      }}
+    >
+      <div>{applicant.name}</div>
+      <div>Match Score: {applicant.score}%</div>
+    </div>
+  );
+}
+
 function ApplicantDetails() {
   const { jobId } = useParams();
 
@@ -100,6 +121,7 @@ function ApplicantDetails() {
 
   const chartData = applicants.map((applicant) => ({
     name: applicant.candidate_name || "Candidate",
+    label: `${applicant.candidate_name || "Candidate"} #${applicant.application_id}`,
     score: Number(applicant.match_score || 0),
   }));
 
@@ -216,7 +238,7 @@ function ApplicantDetails() {
                   />
 
                   <XAxis
-                    dataKey="name"
+                    dataKey="label"
                     angle={-35}
                     textAnchor="end"
                   />
@@ -231,9 +253,7 @@ function ApplicantDetails() {
                   />
 
                   <Tooltip
-                    formatter={(value) =>
-                      `${value}%`
-                    }
+                    content={<ApplicantChartTooltip />}
                   />
 
                   <Bar

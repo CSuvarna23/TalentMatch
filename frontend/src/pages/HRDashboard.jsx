@@ -140,7 +140,9 @@ function HRDashboard() {
 
 
   return (
-    <div className="hr-dashboard">
+    <div className="hr-dashboard dashboard-shell">
+
+      <div className="dashboard-top">
 
       <div className="hr-welcome">
 
@@ -205,7 +207,6 @@ function HRDashboard() {
 
       </section>
 
-
       <section className="hr-section">
 
         <h2>
@@ -221,6 +222,9 @@ function HRDashboard() {
 
       </section>
 
+      </div>
+
+      <div className="dashboard-scroll-content">
 
       <section className="hr-section">
 
@@ -367,6 +371,8 @@ function HRDashboard() {
         </div>
 
       </section>
+
+      </div>
 
     </div>
   );

@@ -8,6 +8,12 @@ function JobCard({ job, onApply, hasApplied = false }) {
         {job.job_title}
       </h3>
 
+      {job.match_score !== undefined && (
+        <p className="job-match-score">
+          Match score: {job.match_score}%
+        </p>
+      )}
+
       {job.company_name && (
         <p className="job-company">
           {job.company_name}

@@ -5,20 +5,35 @@ import {
 } from "react-router-dom";
 
 import { getJob } from "../services/jobService";
-import { applyForJob } from "../services/applicationService";
+import {
+  applyForJob,
+  getMyApplications,
+} from "../services/applicationService";
 
 function JobDetails() {
   const { jobId } = useParams();
   const navigate = useNavigate();
 
   const [job, setJob] = useState(null);
+  const [hasApplied, setHasApplied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadJob() {
       try {
-        const data = await getJob(jobId);
+        const [data, applications] = await Promise.all([
+          getJob(jobId),
+          getMyApplications(),
+        ]);
+
         setJob(data);
+        setHasApplied(
+          applications.some(
+            (application) =>
+              application.job_id === data.job_id ||
+              application.job?.job_id === data.job_id
+          )
+        );
       } catch (error) {
         alert(error.message);
       } finally {
@@ -82,10 +97,11 @@ function JobDetails() {
         </p>
 
         <button
-          className="button"
+          className={`button ${hasApplied ? "applied-button" : ""}`}
           onClick={handleApply}
+          disabled={hasApplied}
         >
-          Apply Now
+          {hasApplied ? "Applied" : "Apply Now"}
         </button>
       </div>
     </div>

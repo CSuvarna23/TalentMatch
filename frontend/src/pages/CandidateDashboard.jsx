@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { getJobs } from "../services/jobService";
+import {
+  getJobs,
+  getRecommendedJobs,
+  getJobMatches,
+} from "../services/jobService";
 
 import { useAuth } from "../context/AuthContext";
 import {
@@ -22,12 +26,14 @@ function CandidateDashboard() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [resume, setResume] = useState(null);
+  const [recommendedJobs, setRecommendedJobs] = useState([]);
+  const [recommendationError, setRecommendationError] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  async function loadData() {
+  async function loadData(predictedCategory = "") {
     try {
       const [jobsData, applicationsData] =
         await Promise.all([
@@ -42,9 +48,30 @@ function CandidateDashboard() {
         const resumeData =
           await getCurrentResume();
 
-        setResume(resumeData);
+        setResume({
+          ...resumeData,
+          predicted_category:
+            predictedCategory || resumeData.predicted_category,
+        });
+
+        try {
+          const [jobMatches, recommendations] =
+            await Promise.all([
+              getJobMatches(),
+              getRecommendedJobs(),
+            ]);
+
+          setJobs(jobMatches);
+          setRecommendedJobs(recommendations);
+          setRecommendationError("");
+        } catch (error) {
+          setRecommendedJobs([]);
+          setRecommendationError(error.message);
+        }
       } catch {
         setResume(null);
+        setRecommendedJobs([]);
+        setRecommendationError("");
       }
     } catch (error) {
       setError(error.message);
@@ -87,14 +114,11 @@ function CandidateDashboard() {
     try {
       setUploading(true);
 
-      await uploadResume(file);
+      const uploadData = await uploadResume(file);
 
       alert("Resume uploaded successfully!");
 
-      const resumeData =
-        await getCurrentResume();
-
-      setResume(resumeData);
+      await loadData(uploadData.predicted_category);
     } catch (error) {
       alert(error.message);
     } finally {
@@ -129,7 +153,8 @@ function CandidateDashboard() {
     ).length;
 
   return (
-    <div className="candidate-dashboard">
+    <div className="candidate-dashboard dashboard-shell">
+    <div className="dashboard-top">
 
       {/* Welcome */}
       <div className="candidate-welcome">
@@ -214,7 +239,11 @@ function CandidateDashboard() {
                     {resume.file_name}
                   </div>
 
-                  
+                  {resume.predicted_category && (
+                    <div className="resume-category">
+                      Predicted category: {resume.predicted_category}
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -303,6 +332,39 @@ function CandidateDashboard() {
         </div>
       </section>
 
+      </div>
+
+      <div className="dashboard-scroll-content">
+
+      {recommendedJobs.length > 0 && (
+        <section className="dashboard-section">
+          <h2 className="dashboard-section-title">
+            Recommended Jobs
+          </h2>
+
+          <div className="job-grid">
+            {recommendedJobs.slice(0, 5).map((job) => (
+              <JobCard
+                key={job.job_id}
+                job={job}
+                onApply={handleApply}
+                hasApplied={applications.some(
+                  (application) =>
+                    application.job_id === job.job_id ||
+                    application.job?.job_id === job.job_id
+                )}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recommendationError && (
+        <div className="error">
+          Recommendations unavailable: {recommendationError}
+        </div>
+      )}
+
       {/* Job Postings */}
       <section className="dashboard-section">
         <h2 className="dashboard-section-title">
@@ -359,6 +421,7 @@ function CandidateDashboard() {
         )}
       </section>
 
+      </div>
     </div>
   );
 }

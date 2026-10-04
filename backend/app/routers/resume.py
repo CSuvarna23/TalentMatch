@@ -17,6 +17,8 @@ from app.routers.auth import require_candidate
 from app.services.resume_parser import extract_text_from_pdf
 from app.services.skill_extractor import extract_skills
 
+from app.services.resume_classifier import predict_category
+
 router = APIRouter(
     prefix="/resume",
     tags=["Resume"]
@@ -40,9 +42,6 @@ async def upload_resume(
 
     # 2. Read PDF file
     file_data = await file.read()
-    extracted_text = extract_text_from_pdf(file_data)
-    resume_skills = extract_skills(extracted_text)
-    skills_text = ", ".join(resume_skills)
 
     # 3. Check that file is not empty
     if not file_data:
@@ -50,6 +49,18 @@ async def upload_resume(
             status_code=400,
             detail="Uploaded file is empty"
         )
+
+    extracted_text = extract_text_from_pdf(file_data)
+
+    if not extracted_text.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract text from the PDF"
+        )
+
+    predicted_category = predict_category(extracted_text)
+    resume_skills = extract_skills(extracted_text)
+    skills_text = ", ".join(resume_skills)
 
     # 4. Mark previous current resume as not current
     db.query(Resume).filter(
@@ -60,17 +71,16 @@ async def upload_resume(
             Resume.is_current: False
         }
     )
-
     # 5. Create new resume
     new_resume = Resume(
-    user_id=current_user.id,
-    file_name=file.filename,
-    file_type=file.content_type,
-    file_data=file_data,
-    extracted_text=extracted_text,
-    skills=skills_text,
-    is_current=True
-)
+        user_id=current_user.id,
+        file_name=file.filename,
+        file_type=file.content_type,
+        file_data=file_data,
+        extracted_text=extracted_text,
+        skills=skills_text,
+        is_current=True
+    )
 
     # 6. Save to database
     db.add(new_resume)
@@ -81,6 +91,7 @@ async def upload_resume(
         "message": "Resume uploaded successfully",
         "resume_id": new_resume.resume_id,
         "file_name": new_resume.file_name,
+        "predicted_category": predicted_category,
         "is_current": new_resume.is_current
     }
 @router.get("/current")

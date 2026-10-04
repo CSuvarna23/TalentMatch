@@ -21,6 +21,8 @@ import ApplicationDetails from "./pages/ApplicationDetails";
 import HRDashboard from "./pages/HRDashboard";
 import CreateJob from "./pages/CreateJob";
 import ManageJobs from "./pages/ManageJobs";
+import EditJob from "./pages/EditJob";
+import HRJobDetails from "./pages/HRJobDetails";
 import ApplicantDetails from "./pages/ApplicantDetails";
 import HRApplicantDetails from "./pages/HRApplicantDetails.jsx";
 
@@ -132,6 +134,24 @@ function App() {
           element={
             <ProtectedRoute role="hr">
               <ManageJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/hr/jobs/:jobId"
+          element={
+            <ProtectedRoute role="hr">
+              <HRJobDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/hr/jobs/:jobId/edit"
+          element={
+            <ProtectedRoute role="hr">
+              <EditJob />
             </ProtectedRoute>
           }
         />

@@ -4,7 +4,8 @@ from sqlalchemy import (
     String,
     Text,
     DateTime,
-    ForeignKey
+    ForeignKey,
+    Boolean
 )
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,6 +24,17 @@ class Job(Base):
 
     job_title: Mapped[str] = mapped_column(
         String(255),
+        nullable=False
+    )
+
+    category: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
         nullable=False
     )
 
